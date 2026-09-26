@@ -135,7 +135,6 @@ p{line-height:1.5}
 .goalmsg{position:absolute;left:0;right:0;bottom:4%;text-align:center;font-size:1.5rem;font-weight:1000;text-shadow:0 3px 10px #000}
 .map-card{overflow:hidden;padding:0}
 .map-head{padding:20px 20px 14px}
-.map-frame{width:100%;height:340px;border:0;display:block}
 .map-actions{padding:14px 20px 20px}
 .footer{text-align:center;opacity:.65;font-size:.82rem;padding-top:16px}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:99;overflow:hidden}
@@ -202,7 +201,7 @@ p{line-height:1.5}
       </div>
       <div class="actions">
         <button class="btn primary" onclick="shareWhatsApp()">✅ Confirmar asistencia</button>
-        <a class="btn" href="https://maps.app.goo.gl/YKvJ166bS27GcrrD7" target="_blank" rel="noopener noreferrer">📍 Ver ubicación en Google Maps</a>
+        <a class="btn" href="https://www.google.com/maps?q=-38.9521488,-68.1260878&z=17&hl=es" target="_blank" rel="noopener noreferrer">📍 Ver ubicación en Google Maps</a>
         <button class="btn" onclick="downloadICS()">📅 Agregar al calendario</button>
       </div>
     </div>
@@ -238,15 +237,9 @@ p{line-height:1.5}
       <div class="map-head">
         <div class="kicker">Dónde jugamos</div>
         <h2 style="margin-bottom:.35rem">Ubicación</h2>
+        <p style="margin:.55rem 0 0">Saldillo 4887, Neuquén</p>
       </div>
-      <iframe
-        class="map-frame"
-        title="Mapa del lugar del cumpleaños"
-        loading="lazy"
-        referrerpolicy="no-referrer-when-downgrade"
-        src="https://www.google.com/maps?q=-38.9521488,-68.1260878&z=17&hl=es&output=embed">
-      </iframe>
-      <div class="map-actions">
+      <div class="map-actions" style="padding-top:0">
         <a class="btn primary"
            href="https://www.google.com/maps?q=-38.9521488,-68.1260878&z=17&hl=es"
            target="_blank"
