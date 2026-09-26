@@ -135,6 +135,7 @@ p{line-height:1.5}
 .goalmsg{position:absolute;left:0;right:0;bottom:4%;text-align:center;font-size:1.5rem;font-weight:1000;text-shadow:0 3px 10px #000}
 .map-card{overflow:hidden;padding:0}
 .map-head{padding:20px 20px 14px}
+.map-frame{width:100%;height:340px;border:0;display:block;background:#e9eef2}
 .map-actions{padding:14px 20px 20px}
 .footer{text-align:center;opacity:.65;font-size:.82rem;padding-top:16px}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:99;overflow:hidden}
@@ -239,7 +240,15 @@ p{line-height:1.5}
         <h2 style="margin-bottom:.35rem">Ubicación</h2>
         <p style="margin:.55rem 0 0">Saldillo 4887, Neuquén</p>
       </div>
-      <div class="map-actions" style="padding-top:0">
+
+      <iframe
+        class="map-frame"
+        title="Mapa del lugar del cumpleaños"
+        loading="lazy"
+        src="https://www.openstreetmap.org/export/embed.html?bbox=-68.1310878%2C-38.9551488%2C-68.1210878%2C-38.9491488&layer=mapnik&marker=-38.9521488%2C-68.1260878">
+      </iframe>
+
+      <div class="map-actions">
         <a class="btn primary"
            href="https://www.google.com/maps?q=-38.9521488,-68.1260878&z=17&hl=es"
            target="_blank"
