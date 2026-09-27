@@ -169,10 +169,10 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
     <div class="kicker">Premios</div>
     <h2>🏆 Ranking del desafío</h2>
     <div class="podium" id="ranking">
-      <div class="rankrow"><div class="pos">—</div><div class="name">Ranking online pendiente de conexión</div><div class="score">—</div></div>
+      <div class="rankrow"><div class="pos">—</div><div class="name">Cargando ranking…</div><div class="score">—</div></div>
     </div>
     <div class="prize"><strong>🥇🥈🥉 Los tres primeros tendrán premio el día del cumpleaños.</strong></div>
-    <p class="help">El ranking definitivo guardará únicamente apodo, mejor puntaje y fecha/hora del resultado.</p>
+    <p class="help">El ranking compartido muestra el apodo y la mejor sesión de cada jugador. Necesitás conexión para guardar tu resultado.</p>
     <a class="btn secondary" href="./">← Volver a la invitación</a>
   </section>
 
@@ -183,6 +183,7 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
 
 <script>
 const STORAGE='penalesSantiCami2026_v3';
+const RANKING_API='https://penales-santi-cami-ranking.neubyte.chatgpt.site/api/ranking';
 const COOLDOWN_MS=2*60*60*1000;
 const MAX_ROUNDS=3;
 const SHOTS_PER_ROUND=5;
@@ -201,7 +202,7 @@ const KEEPER_IMAGES={
 let busy=false;
 
 function blankState(){
-  return {nick:'',round:0,shot:0,roundGoals:0,sessionGoals:0,roundResults:[],matchScores:[],best:0,lastSession:0,cooldownUntil:0};
+  return {nick:'',round:0,shot:0,roundGoals:0,sessionGoals:0,roundResults:[],matchScores:[],best:0,lastSession:0,cooldownUntil:0,playerId:'',pendingScore:null};
 }
 function loadState(){
   try{
@@ -210,10 +211,50 @@ function loadState(){
   }catch(e){return blankState()}
 }
 let state=loadState();
+if(state.nick&&!state.playerId){state.playerId=crypto.randomUUID();save()}
+if(state.round>=MAX_ROUNDS&&state.lastSession!==undefined&&state.pendingScore===null&&state.nick&&!state.rankingSynced){state.pendingScore=state.lastSession;save()}
 
 function save(){localStorage.setItem(STORAGE,JSON.stringify(state))}
 function cleanNick(v){ return v.replace(/[<>]/g,'').replace(/\s+/g,' ').trim().slice(0,12); }
 function setHidden(id,yes){$(id).classList.toggle('hidden',yes)}
+function rankingMessage(message){
+  const box=$('ranking');box.replaceChildren();
+  const row=document.createElement('div');row.className='rankrow';
+  const name=document.createElement('div');name.className='name';name.textContent=message;
+  row.appendChild(name);box.appendChild(row);
+}
+function displayRanking(rows){
+  const box=$('ranking');box.replaceChildren();
+  if(!rows.length){rankingMessage('Todavía no hay resultados. ¡Podés inaugurar el ranking!');return}
+  rows.forEach((item,i)=>{
+    const row=document.createElement('div');row.className='rankrow';
+    const pos=document.createElement('div');pos.className='pos';pos.textContent=['🥇','🥈','🥉'][i]||String(i+1)+'.';
+    const name=document.createElement('div');name.className='name';name.textContent=item.nickname;
+    const score=document.createElement('div');score.className='score';score.textContent=item.best+'/15';
+    row.append(pos,name,score);box.appendChild(row);
+  });
+}
+async function refreshRanking(){
+  try{
+    const response=await fetch(RANKING_API,{cache:'no-store'});
+    if(!response.ok)throw new Error('ranking');
+    displayRanking((await response.json()).ranking||[]);
+  }catch(e){rankingMessage('Sin conexión con el ranking. Tus goles se guardan en este dispositivo.');}
+}
+async function syncRanking(){
+  if(state.pendingScore===null||!state.nick)return refreshRanking();
+  if(!state.playerId)state.playerId=crypto.randomUUID();
+  try{
+    const response=await fetch(RANKING_API,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:state.playerId,nickname:state.nick,best:state.pendingScore})
+    });
+    if(!response.ok)throw new Error('save');
+    displayRanking((await response.json()).ranking||[]);
+    state.pendingScore=null;state.rankingSynced=true;save();
+  }catch(e){rankingMessage('No se pudo subir el resultado. Se reintentará al recuperar conexión.');}
+}
+
 
 function render(){
   const cooling=state.cooldownUntil>Date.now();
@@ -347,6 +388,8 @@ function finishRound(){
     state.round=MAX_ROUNDS;
     state.lastSession=state.sessionGoals;
     state.best=Math.max(state.best,state.sessionGoals);
+    state.pendingScore=state.best;state.rankingSynced=false;
+    syncRanking();
     state.cooldownUntil=Date.now()+COOLDOWN_MS;
     save();
     setTimeout(()=>{busy=false;render()},950);
@@ -370,15 +413,15 @@ function nextRound(){
 function start(){
   const nick=cleanNick($('nick').value);
   if(nick.length<2){$('nick').focus(); return}
-  state=blankState(); state.nick=nick;
+  state=blankState(); state.nick=nick; state.playerId=crypto.randomUUID();
   save(); render(); resetPositions();
 }
 function updateCooldown(){
   if(!state.cooldownUntil)return;
   const left=state.cooldownUntil-Date.now();
   if(left<=0){
-    const keepNick=state.nick,best=state.best,lastSession=state.lastSession;
-    state=blankState(); state.nick=keepNick; state.best=best; state.lastSession=lastSession;
+    const keepNick=state.nick,best=state.best,lastSession=state.lastSession,playerId=state.playerId,pendingScore=state.pendingScore,rankingSynced=state.rankingSynced;
+    state=blankState(); state.nick=keepNick; state.best=best; state.lastSession=lastSession; state.playerId=playerId; state.pendingScore=pendingScore; state.rankingSynced=rankingSynced;
     save(); render(); return;
   }
   const total=Math.ceil(left/1000);
@@ -397,7 +440,10 @@ $('resetBtn').addEventListener('click',resetDemo);
 if(new URLSearchParams(location.search).get('admin')==='1')$('adminBox').classList.remove('hidden');
 
 setInterval(updateCooldown,1000);
+setInterval(()=>{if(state.pendingScore!==null)syncRanking();else refreshRanking()},30000);
+window.addEventListener('online',syncRanking);
 render();
+syncRanking();
 if(state.nick && state.cooldownUntil<=Date.now() && state.round<MAX_ROUNDS) resetPositions();
 </script>
 </body>
