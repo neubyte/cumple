@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111c">
+<title>Desafío de Penales — Cumple Santi & Cami 2026</title>
+<style>
+:root{
+  --bg:#07111c;--card:#0e1d2b;--line:rgba(255,255,255,.14);
+  --text:#fff;--muted:rgba(255,255,255,.68);--accent:#f4c316;
+  --green1:#238a48;--green2:#176e39;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);background:
+  radial-gradient(circle at 20% 0%,rgba(244,195,22,.14),transparent 30%),
+  linear-gradient(180deg,#06101a,#07111c 55%,#050b11);
+  min-height:100vh;
+}
+button,input{font:inherit}
+.wrap{max-width:720px;margin:auto;padding:18px 14px 42px}
+.hero{text-align:center;padding:18px 6px 14px}
+.kicker{font-size:.75rem;letter-spacing:.16em;text-transform:uppercase;opacity:.62}
+h1{font-size:clamp(2rem,9vw,3.8rem);line-height:.95;margin:.45rem 0}
+.hero p{margin:.5rem auto 0;color:var(--muted);max-width:540px}
+.card{background:rgba(14,29,43,.9);border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+.hidden{display:none!important}
+label{display:block;font-weight:800;margin-bottom:8px}
+input{
+  width:100%;border:1px solid var(--line);background:#050b11;color:#fff;
+  border-radius:14px;padding:14px 15px;font-size:16px;outline:none
+}
+input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,22,.12)}
+.help{font-size:.86rem;color:var(--muted);margin:.5rem 0 0}
+.btn{
+  width:100%;border:0;border-radius:16px;padding:14px 16px;font-weight:900;
+  cursor:pointer;margin-top:14px
+}
+.btn.primary{background:linear-gradient(90deg,#f4c316,#fff2a8);color:#111}
+.btn.secondary{background:#13283a;color:#fff;border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.stat{background:#050b11;border:1px solid var(--line);border-radius:16px;padding:11px 6px;text-align:center}
+.stat b{display:block;font-size:1.55rem}.stat span{font-size:.72rem;color:var(--muted)}
+.pitch{
+  position:relative;aspect-ratio:9/11;max-height:560px;margin:14px auto 0;
+  border-radius:24px;overflow:hidden;border:1px solid var(--line);
+  background:
+   linear-gradient(90deg,transparent 49.7%,rgba(255,255,255,.14) 49.7% 50.3%,transparent 50.3%),
+   repeating-linear-gradient(0deg,var(--green1) 0 46px,var(--green2) 46px 92px);
+}
+.goal{
+  position:absolute;left:10%;right:10%;top:8%;height:37%;
+  border:5px solid #fff;border-bottom-width:7px;
+  background:
+   repeating-linear-gradient(90deg,transparent 0 29px,rgba(255,255,255,.18) 29px 31px),
+   repeating-linear-gradient(0deg,transparent 0 26px,rgba(255,255,255,.18) 26px 28px);
+  box-shadow:inset 0 0 40px rgba(0,0,0,.2)
+}
+.keeper{
+  position:absolute;left:50%;top:25%;width:56px;height:82px;transform:translate(-50%,-50%);
+  transition:left .36s cubic-bezier(.2,.8,.2,1),transform .36s cubic-bezier(.2,.8,.2,1);
+  z-index:3;filter:drop-shadow(0 5px 5px rgba(0,0,0,.35))
+}
+.keeper .head{position:absolute;width:24px;height:24px;border-radius:50%;background:#f0c7a4;left:16px;top:0}
+.keeper .body{position:absolute;width:28px;height:38px;border-radius:10px 10px 6px 6px;background:#ff6a3d;left:14px;top:23px}
+.keeper .arm{position:absolute;width:36px;height:8px;border-radius:8px;background:#ff6a3d;top:32px}
+.keeper .arm.a{left:-12px;transform:rotate(-18deg)}.keeper .arm.b{right:-12px;transform:rotate(18deg)}
+.keeper .leg{position:absolute;width:8px;height:28px;background:#202b35;top:57px}
+.keeper .leg.a{left:18px;transform:rotate(10deg)}.keeper .leg.b{right:18px;transform:rotate(-10deg)}
+.ball{
+  position:absolute;left:50%;bottom:14%;font-size:46px;transform:translateX(-50%);
+  transition:left .42s cubic-bezier(.2,.85,.2,1),bottom .42s cubic-bezier(.2,.85,.2,1),transform .42s;
+  z-index:5;filter:drop-shadow(0 5px 6px rgba(0,0,0,.35))
+}
+.targets{position:absolute;left:10%;right:10%;top:8%;height:37%;z-index:8;display:grid;grid-template-columns:repeat(3,1fr)}
+.target{border:0;background:transparent;cursor:pointer;position:relative}
+.target:focus-visible{outline:3px solid var(--accent);outline-offset:-5px}
+.target::after{
+  content:"";position:absolute;width:42px;height:42px;border-radius:50%;
+  left:50%;top:46%;transform:translate(-50%,-50%);
+  border:2px dashed rgba(255,255,255,.4);background:rgba(255,255,255,.06)
+}
+.result{
+  position:absolute;left:12px;right:12px;bottom:4%;text-align:center;
+  font-size:clamp(1.15rem,5vw,1.65rem);font-weight:1000;text-shadow:0 3px 10px #000;z-index:10
+}
+.shots{display:flex;justify-content:center;gap:8px;margin-top:14px}
+.shot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#050b11;border:1px solid var(--line);font-size:.8rem}
+.shot.goalshot{background:#1b7e43}.shot.saved{background:#8f2e2e}
+.note{margin-top:14px;padding:12px 14px;border-radius:16px;background:#07111c;border:1px solid var(--line);color:var(--muted);font-size:.88rem}
+.cooldown{text-align:center}
+.cooldown .clock{font-size:2rem;font-weight:1000;margin:10px 0}
+.best{text-align:center;margin-top:18px}
+.best strong{font-size:2rem;display:block}
+.podium{display:grid;gap:8px;margin-top:12px}
+.rankrow{display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:center;padding:11px 12px;border-radius:14px;background:#07111c;border:1px solid var(--line)}
+.rankrow .pos{font-weight:1000;text-align:center}.rankrow .name{font-weight:800}.rankrow .score{font-weight:1000;color:var(--accent)}
+.prize{margin-top:18px;padding:14px;border-radius:18px;background:rgba(244,195,22,.08);border:1px solid rgba(244,195,22,.25);text-align:center}
+.admin{margin-top:18px}
+@media(max-width:420px){.card{padding:16px}.status-grid{gap:6px}.stat b{font-size:1.35rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="kicker">Cumple Santi & Cami 2026</div>
+    <h1>⚽ Desafío de Penales</h1>
+    <p>Tenés tres tandas de cinco penales. Después descansás dos horas. El arquero decide al azar si llega o no.</p>
+  </header>
+
+  <section class="card" id="loginCard">
+    <label for="nick">Tu nombre o apodo</label>
+    <input id="nick" maxlength="12" autocomplete="nickname" placeholder="Ej.: Benja" aria-describedby="nickHelp">
+    <p class="help" id="nickHelp">Sólo un nombre o apodo. No hace falta apellido ni ningún otro dato.</p>
+    <button class="btn primary" id="startBtn" type="button">Entrar al desafío</button>
+  </section>
+
+  <section class="card hidden" id="gameCard">
+    <div class="kicker" id="playerLabel">Jugador</div>
+    <div class="status-grid">
+      <div class="stat"><b id="roundNum">1/3</b><span>Tanda</span></div>
+      <div class="stat"><b id="roundGoals">0/5</b><span>Esta tanda</span></div>
+      <div class="stat"><b id="sessionGoals">0/15</b><span>Sesión</span></div>
+    </div>
+
+    <div class="pitch" id="pitch">
+      <div class="goal"></div>
+      <div class="keeper" id="keeper" aria-hidden="true">
+        <div class="head"></div><div class="body"></div>
+        <div class="arm a"></div><div class="arm b"></div>
+        <div class="leg a"></div><div class="leg b"></div>
+      </div>
+      <div class="ball" id="ball">⚽</div>
+      <div class="targets" id="targets">
+        <button class="target" data-zone="left" aria-label="Patear a la izquierda"></button>
+        <button class="target" data-zone="center" aria-label="Patear al centro"></button>
+        <button class="target" data-zone="right" aria-label="Patear a la derecha"></button>
+      </div>
+      <div class="result" id="result">Elegí dónde patear</div>
+    </div>
+
+    <div class="shots" id="shots" aria-label="Resultado de los cinco penales"></div>
+    <button class="btn primary hidden" id="nextRoundBtn" type="button">Jugar la siguiente tanda</button>
+    <div class="note">El resultado de cada penal se decide aleatoriamente. Elegir un rincón sólo cambia la animación, no aumenta ni reduce tus chances.</div>
+  </section>
+
+  <section class="card hidden cooldown" id="cooldownCard">
+    <div class="kicker">Tiempo de descanso</div>
+    <h2>Ya jugaste tus 3 tandas</h2>
+    <div class="clock" id="cooldownClock">02:00:00</div>
+    <p class="help">Cuando termine el contador podés volver a intentar mejorar tu marca.</p>
+    <div class="best">Tu mejor sesión en este dispositivo<strong id="bestLocal">—</strong><span>goles sobre 15</span></div>
+  </section>
+
+  <section class="card" style="margin-top:18px">
+    <div class="kicker">Premios</div>
+    <h2>🏆 Ranking del desafío</h2>
+    <div class="podium" id="ranking">
+      <div class="rankrow"><div class="pos">—</div><div class="name">Ranking online pendiente de conexión</div><div class="score">—</div></div>
+    </div>
+    <div class="prize"><strong>🥇🥈🥉 Los tres primeros tendrán premio el día del cumpleaños.</strong></div>
+    <p class="help">El ranking definitivo guardará únicamente apodo, mejor puntaje y fecha/hora del resultado.</p>
+  </section>
+
+  <section class="admin hidden" id="adminBox">
+    <button class="btn secondary" id="resetBtn" type="button">Reiniciar prueba en este dispositivo</button>
+  </section>
+</div>
+
+<script>
+const STORAGE='penalesSantiCami2026_v1';
+const COOLDOWN_MS=2*60*60*1000;
+const MAX_ROUNDS=3;
+const SHOTS_PER_ROUND=5;
+const SAVE_PROBABILITY=.34;
+
+const $=id=>document.getElementById(id);
+const zones=['left','center','right'];
+let busy=false;
+
+function blankState(){
+  return {nick:'',round:0,shot:0,roundGoals:0,sessionGoals:0,roundResults:[],best:0,cooldownUntil:0};
+}
+function loadState(){
+  try{
+    const s=JSON.parse(localStorage.getItem(STORAGE));
+    return {...blankState(),...(s||{})};
+  }catch(e){return blankState()}
+}
+let state=loadState();
+
+function save(){localStorage.setItem(STORAGE,JSON.stringify(state))}
+function cleanNick(v){
+  return v.replace(/[<>]/g,'').replace(/\s+/g,' ').trim().slice(0,12);
+}
+function setHidden(id,yes){$(id).classList.toggle('hidden',yes)}
+
+function render(){
+  const cooling=state.cooldownUntil>Date.now();
+  const hasNick=!!state.nick;
+  setHidden('loginCard',hasNick||cooling);
+  setHidden('gameCard',!hasNick||cooling||state.round>=MAX_ROUNDS);
+  setHidden('cooldownCard',!cooling && !(state.round>=MAX_ROUNDS && hasNick));
+
+  if(hasNick){
+    $('playerLabel').textContent='Jugando: '+state.nick;
+    $('roundNum').textContent=Math.min(state.round+1,MAX_ROUNDS)+'/'+MAX_ROUNDS;
+    $('roundGoals').textContent=state.roundGoals+'/'+SHOTS_PER_ROUND;
+    $('sessionGoals').textContent=state.sessionGoals+'/'+(MAX_ROUNDS*SHOTS_PER_ROUND);
+    $('bestLocal').textContent=state.best||'—';
+    renderShots();
+  }
+  updateCooldown();
+}
+function renderShots(){
+  $('shots').innerHTML='';
+  for(let i=0;i<SHOTS_PER_ROUND;i++){
+    const d=document.createElement('div');
+    d.className='shot';
+    if(state.roundResults[i]==='goal'){d.classList.add('goalshot');d.textContent='G'}
+    else if(state.roundResults[i]==='save'){d.classList.add('saved');d.textContent='A'}
+    else d.textContent='·';
+    $('shots').appendChild(d);
+  }
+}
+function resetPositions(){
+  const ball=$('ball'),keeper=$('keeper');
+  ball.style.transition='none';keeper.style.transition='none';
+  ball.style.left='50%';ball.style.bottom='14%';ball.style.transform='translateX(-50%) scale(1)';
+  keeper.style.left='50%';keeper.style.transform='translate(-50%,-50%) rotate(0deg)';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    ball.style.transition='left .42s cubic-bezier(.2,.85,.2,1),bottom .42s cubic-bezier(.2,.85,.2,1),transform .42s';
+    keeper.style.transition='left .36s cubic-bezier(.2,.8,.2,1),transform .36s cubic-bezier(.2,.8,.2,1)';
+  }));
+}
+function zoneX(zone){return zone==='left'?'24%':zone==='right'?'76%':'50%'}
+function otherZone(zone){
+  const a=zones.filter(z=>z!==zone);
+  return a[Math.floor(Math.random()*a.length)];
+}
+async function shoot(zone){
+  if(busy||state.shot>=SHOTS_PER_ROUND)return;
+  busy=true;
+  $('targets').style.pointerEvents='none';
+  resetPositions();
+  $('result').textContent='¡Va el remate!';
+
+  const saved=Math.random()<SAVE_PROBABILITY;
+  const keeperZone=saved?zone:otherZone(zone);
+
+  setTimeout(()=>{
+    $('ball').style.left=zoneX(zone);$('ball').style.bottom='64%';$('ball').style.transform='translateX(-50%) scale(.58)';
+    $('keeper').style.left=zoneX(keeperZone);
+    $('keeper').style.transform='translate(-50%,-50%) '+(keeperZone==='left'?'rotate(-28deg)':keeperZone==='right'?'rotate(28deg)':'rotate(0deg)');
+  },80);
+
+  setTimeout(()=>{
+    state.roundResults[state.shot]=saved?'save':'goal';
+    state.shot++;
+    if(!saved){state.roundGoals++;state.sessionGoals++}
+    $('result').textContent=saved?'🧤 ¡Atajó el arquero!':'⚽ ¡GOOOOL!';
+    save();render();
+    if(state.shot>=SHOTS_PER_ROUND) finishRound();
+    else{
+      setTimeout(()=>{resetPositions();$('result').textContent='Elegí dónde patear';$('targets').style.pointerEvents='auto';busy=false},650);
+    }
+  },540);
+}
+function finishRound(){
+  $('targets').style.pointerEvents='none';
+  const finalRound=state.round===MAX_ROUNDS-1;
+  if(finalRound){
+    state.round=MAX_ROUNDS;
+    state.best=Math.max(state.best,state.sessionGoals);
+    state.cooldownUntil=Date.now()+COOLDOWN_MS;
+    save();
+    setTimeout(()=>{busy=false;render()},850);
+  }else{
+    $('nextRoundBtn').classList.remove('hidden');
+    $('nextRoundBtn').textContent='Jugar tanda '+(state.round+2)+' de '+MAX_ROUNDS;
+    busy=false;
+  }
+}
+function nextRound(){
+  state.round++;
+  state.shot=0;state.roundGoals=0;state.roundResults=[];
+  save();
+  $('nextRoundBtn').classList.add('hidden');
+  $('targets').style.pointerEvents='auto';
+  resetPositions();$('result').textContent='Elegí dónde patear';
+  render();
+}
+function start(){
+  const nick=cleanNick($('nick').value);
+  if(nick.length<2){$('nick').focus();return}
+  state=blankState();state.nick=nick;
+  save();render();resetPositions();
+}
+function updateCooldown(){
+  if(!state.cooldownUntil)return;
+  const left=state.cooldownUntil-Date.now();
+  if(left<=0){
+    const keepNick=state.nick,best=state.best;
+    state=blankState();state.nick=keepNick;state.best=best;save();render();return;
+  }
+  const total=Math.ceil(left/1000);
+  const h=String(Math.floor(total/3600)).padStart(2,'0');
+  const m=String(Math.floor((total%3600)/60)).padStart(2,'0');
+  const s=String(total%60).padStart(2,'0');
+  $('cooldownClock').textContent=h+':'+m+':'+s;
+}
+function resetDemo(){localStorage.removeItem(STORAGE);state=blankState();location.reload()}
+
+$('startBtn').addEventListener('click',start);
+$('nick').addEventListener('keydown',e=>{if(e.key==='Enter')start()});
+document.querySelectorAll('.target').forEach(b=>b.addEventListener('click',()=>shoot(b.dataset.zone)));
+$('nextRoundBtn').addEventListener('click',nextRound);
+$('resetBtn').addEventListener('click',resetDemo);
+if(new URLSearchParams(location.search).get('admin')==='1')$('adminBox').classList.remove('hidden');
+
+setInterval(updateCooldown,1000);
+render();
+if(state.nick && state.cooldownUntil<=Date.now() && state.round<MAX_ROUNDS) resetPositions();
+</script>
+</body>
+</html>
