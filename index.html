@@ -123,31 +123,8 @@ p{line-height:1.5}
 }
 .btn.primary{background:linear-gradient(90deg,#f3c111,#fff 48%,#ef3b40);color:#101820;border:none}
 .btn.disabled{opacity:.42;cursor:not-allowed}
-.penal-wrap{position:relative;aspect-ratio:16/10;border-radius:22px;overflow:hidden;background:
-  linear-gradient(#1f7a43 0 64%,#17813f 64%);
-  border:1px solid var(--line);
-}
-.goal{
-  position:absolute;left:12%;right:12%;top:13%;height:48%;
-  border:5px solid #fff;border-bottom-width:7px;
-  background:
-   repeating-linear-gradient(90deg,transparent 0 26px,rgba(255,255,255,.16) 26px 28px),
-   repeating-linear-gradient(0deg,transparent 0 22px,rgba(255,255,255,.16) 22px 24px);
-}
-.target{position:absolute;width:25%;height:48%;top:13%;border:0;background:transparent;cursor:pointer}
-.target.left{left:12%} .target.center{left:37.5%} .target.right{right:12%}
-.ball{
-  position:absolute;
-  left:50%;
-  bottom:11%;
-  transform:translateX(-50%);
-  font-size:48px;
-  transition:left .48s cubic-bezier(.2,.8,.2,1),
-             bottom .48s cubic-bezier(.2,.8,.2,1),
-             transform .48s cubic-bezier(.2,.8,.2,1);
-  z-index:4;
-}
-.goalmsg{position:absolute;left:0;right:0;bottom:4%;text-align:center;font-size:1.5rem;font-weight:1000;text-shadow:0 3px 10px #000}
+.game-frame{width:100%;height:1020px;border:0;border-radius:18px;background:#07111c;display:block}
+@media(max-width:600px){.game-frame{height:940px}}
 .map-card{overflow:hidden;padding:0}
 .map-head{padding:20px 20px 14px}
 .map-frame{width:100%;height:340px;border:0;display:block;background:#e9eef2}
@@ -226,16 +203,10 @@ p{line-height:1.5}
   <section class="section">
     <div class="card">
       <div class="kicker">Tiempo extra</div>
-      <h2>Definilo por penales</h2>
-      <p>Elegí dónde patear.</p>
-      <div class="penal-wrap" id="penal">
-        <div class="goal"></div>
-        <button aria-label="Patear a la izquierda" class="target left" onclick="shoot('left')"></button>
-        <button aria-label="Patear al centro" class="target center" onclick="shoot('center')"></button>
-        <button aria-label="Patear a la derecha" class="target right" onclick="shoot('right')"></button>
-        <div class="ball" id="ball">⚽</div>
-        <div class="goalmsg" id="goalmsg">Elegí un rincón</div>
-      </div>
+      <h2>Desafío de Penales</h2>
+      <p>Elegí dónde patear y probá suerte con el arquero.</p>
+      <iframe class="game-frame" title="Desafío de Penales" src="./juego-penales.html" loading="lazy" allow="fullscreen"></iframe>
+      <a class="btn" href="./juego-penales.html" target="_blank" rel="noopener noreferrer">Abrir el juego en pantalla completa</a>
     </div>
   </section>
 
@@ -405,46 +376,6 @@ function downloadICS(){
   const a = document.createElement('a');
   a.href = url; a.download = 'Cumple_Camilo_Santiago.ics';
   a.click(); URL.revokeObjectURL(url);
-}
-
-let shotInProgress = false;
-
-function shoot(side){
-  if(shotInProgress) return;
-  shotInProgress = true;
-
-  const ball = document.getElementById('ball');
-  const msg = document.getElementById('goalmsg');
-
-  ball.style.transition = 'none';
-  ball.style.left = '50%';
-  ball.style.bottom = '11%';
-  ball.style.transform = 'translateX(-50%) scale(1)';
-  msg.textContent = '¡Va el remate!';
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      ball.style.transition =
-        'left .48s cubic-bezier(.2,.8,.2,1), bottom .48s cubic-bezier(.2,.8,.2,1), transform .48s cubic-bezier(.2,.8,.2,1)';
-
-      const positions = {
-        left:   { left:'27%', bottom:'54%' },
-        center: { left:'50%', bottom:'50%' },
-        right:  { left:'73%', bottom:'54%' }
-      };
-      const p = positions[side] || positions.center;
-
-      ball.style.left = p.left;
-      ball.style.bottom = p.bottom;
-      ball.style.transform = 'translateX(-50%) scale(.58)';
-    });
-  });
-
-  setTimeout(() => {
-    msg.textContent = '¡GOOOOL! ⚽🎉 Tocá otro rincón para patear de nuevo';
-    burst();
-    shotInProgress = false;
-  }, 520);
 }
 
 function burst(){
