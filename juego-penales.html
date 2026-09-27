@@ -117,7 +117,7 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
   <section class="card" id="loginCard">
     <label for="nick">Tu nombre o apodo</label>
     <input id="nick" maxlength="12" autocomplete="nickname" placeholder="Ej.: Benja" aria-describedby="nickHelp">
-    <p class="help" id="nickHelp">Sólo un nombre o apodo. No hace falta apellido ni ningún otro dato.</p>
+    <p class="help" id="nickHelp" aria-live="polite">Elegí un apodo único. Si ya está ocupado, probá con otro, por ejemplo “Santi 2”.</p>
     <button class="btn primary" id="startBtn" type="button">Entrar al desafío</button>
   </section>
 
@@ -182,7 +182,7 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
 </div>
 
 <script>
-const STORAGE='penalesSantiCami2026_v4';
+const STORAGE='penalesSantiCami2026_v5';
 const RANKING_API='https://penales-santi-cami-ranking.neubyte.chatgpt.site/api/ranking';
 const COOLDOWN_MS=2*60*60*1000;
 const MAX_ROUNDS=3;
@@ -410,11 +410,32 @@ function nextRound(){
   $('result').textContent='Elegí dónde patear';
   render();
 }
-function start(){
+async function start(){
+  if($('startBtn').disabled)return;
   const nick=cleanNick($('nick').value);
-  if(nick.length<2){$('nick').focus(); return}
-  state=blankState(); state.nick=nick; state.playerId=crypto.randomUUID();
-  save(); render(); resetPositions();
+  if(nick.length<2){$('nickHelp').textContent='Escribí al menos dos letras para tu apodo.';$('nick').focus();return}
+  const id=crypto.randomUUID();
+  $('startBtn').disabled=true;
+  $('startBtn').textContent='Reservando apodo…';
+  $('nickHelp').textContent='Consultando si el apodo está libre…';
+  try{
+    const response=await fetch(RANKING_API,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'reserve',id,nickname:nick})
+    });
+    if(response.status===409){
+      $('nickHelp').textContent='“'+nick+'” ya está ocupado. Probá otro, por ejemplo “'+nick.slice(0,10)+' 2”.';
+      $('nick').focus();$('nick').select();return;
+    }
+    if(!response.ok)throw new Error('reserve');
+    state=blankState();state.nick=nick;state.playerId=id;
+    save();render();resetPositions();refreshRanking();
+  }catch(e){
+    $('nickHelp').textContent='No se pudo verificar el apodo. Revisá la conexión e intentá de nuevo.';
+  }finally{
+    $('startBtn').disabled=false;
+    $('startBtn').textContent='Entrar al desafío';
+  }
 }
 function updateCooldown(){
   if(!state.cooldownUntil)return;
