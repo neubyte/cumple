@@ -253,7 +253,6 @@ p{line-height:1.5}
       <div class="map-head">
         <div class="kicker">Dónde jugamos</div>
         <h2 style="margin-bottom:.35rem">Ubicación</h2>
-        <p style="margin:.55rem 0 0">Saldillo 4887, Neuquén</p>
       </div>
 
       <iframe
@@ -275,6 +274,15 @@ p{line-height:1.5}
   <section class="section">
     <div class="card" style="text-align:center">
       <h2 style="margin:0">¡Te esperamos!</h2>
+    </div>
+  </section>
+
+  <section class="section" id="adminCounter" style="display:none">
+    <div class="card" style="text-align:center">
+      <div class="kicker">Control de confirmaciones</div>
+      <h2 style="margin-bottom:.4rem"><span id="confirmedTotal">8</span> / 30</h2>
+      <p style="margin:.2rem 0 0;opacity:.78">Confirmados · faltan <strong id="confirmedMissing">22</strong></p>
+      <p id="counterStatus" style="font-size:.82rem;opacity:.58;margin-bottom:0">Actualizando…</p>
     </div>
   </section>
 
@@ -313,11 +321,69 @@ function tick(){
 }
 tick(); setInterval(tick, 1000);
 
+const CONFIRM_BASE = 8;
+const CONFIRM_GOAL = 30;
+const COUNTER_GET = 'https://abacus.jasoncameron.dev/get/cumple-cami-santi-20261004-7f3a9c2d/confirmados';
+const COUNTER_HIT = 'https://abacus.jasoncameron.dev/hit/cumple-cami-santi-20261004-7f3a9c2d/confirmados';
+const CONFIRM_STORAGE_KEY = 'cumpleCamiloSantiagoConfirmadoV1';
+let confirmationPending = false;
+
+function registerConfirmation(){
+  if(localStorage.getItem(CONFIRM_STORAGE_KEY) === '1' || confirmationPending) return;
+  confirmationPending = true;
+
+  fetch(COUNTER_HIT, {method:'GET', mode:'cors', cache:'no-store', keepalive:true})
+    .then(res => {
+      if(!res.ok) throw new Error('No se pudo registrar');
+      return res.json();
+    })
+    .then(() => {
+      localStorage.setItem(CONFIRM_STORAGE_KEY, '1');
+      confirmationPending = false;
+    })
+    .catch(() => {
+      confirmationPending = false;
+    });
+}
+
 function shareWhatsApp(){
+  registerConfirmation();
   const team = choice === 'boca' ? 'Camilo/Boca' : choice === 'river' ? 'Santiago/River' : 'todavía no elegí tribuna';
   const msg = `¡Hola! Confirmo asistencia al cumple de Camilo y Santiago ⚽🎉\nMi tribuna: ${team}`;
   window.open('https://wa.me/5492996238668?text=' + encodeURIComponent(msg), '_blank');
 }
+
+async function loadAdminCounter(){
+  const params = new URLSearchParams(location.search);
+  if(params.get('admin') !== '1') return;
+
+  const panel = document.getElementById('adminCounter');
+  panel.style.display = 'block';
+
+  let nuevos = 0;
+  let estado = 'Contador listo';
+  try{
+    const res = await fetch(COUNTER_GET, {cache:'no-store'});
+    if(res.ok){
+      const data = await res.json();
+      nuevos = Number(data.value) || 0;
+    }else if(res.status === 404){
+      nuevos = 0;
+      estado = 'Todavía no hay confirmaciones nuevas';
+    }else{
+      estado = 'No se pudo actualizar ahora';
+    }
+  }catch(e){
+    estado = 'No se pudo actualizar ahora';
+  }
+
+  const total = CONFIRM_BASE + nuevos;
+  document.getElementById('confirmedTotal').textContent = total;
+  document.getElementById('confirmedMissing').textContent = Math.max(CONFIRM_GOAL - total, 0);
+  document.getElementById('counterStatus').textContent = estado;
+}
+
+loadAdminCounter();
 
 function downloadICS(){
   const text = [
