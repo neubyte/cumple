@@ -46,43 +46,53 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
 .stat{background:#050b11;border:1px solid var(--line);border-radius:16px;padding:11px 6px;text-align:center}
 .stat b{display:block;font-size:1.55rem}.stat span{font-size:.72rem;color:var(--muted)}
 .pitch{
-  position:relative;aspect-ratio:9/11;max-height:560px;margin:14px auto 0;
+  position:relative;aspect-ratio:10/9;max-height:560px;margin:14px auto 0;
   border-radius:24px;overflow:hidden;border:1px solid var(--line);
   background:
    linear-gradient(90deg,transparent 49.7%,rgba(255,255,255,.14) 49.7% 50.3%,transparent 50.3%),
    repeating-linear-gradient(0deg,var(--green1) 0 46px,var(--green2) 46px 92px);
 }
 .goal{
-  position:absolute;left:10%;right:10%;top:8%;height:37%;
-  border:5px solid #fff;border-bottom-width:7px;
+  position:absolute;left:4%;right:4%;top:7%;height:39%;
+  border:5px solid #fff;border-bottom-width:7px;border-radius:5px 5px 0 0;
   background:
-   repeating-linear-gradient(90deg,transparent 0 29px,rgba(255,255,255,.18) 29px 31px),
-   repeating-linear-gradient(0deg,transparent 0 26px,rgba(255,255,255,.18) 26px 28px);
+   repeating-linear-gradient(90deg,transparent 0 34px,rgba(255,255,255,.18) 34px 36px),
+   repeating-linear-gradient(0deg,transparent 0 27px,rgba(255,255,255,.18) 27px 29px);
   box-shadow:inset 0 0 40px rgba(0,0,0,.2)
 }
 .keeper{
-  position:absolute;left:50%;top:25%;width:56px;height:82px;transform:translate(-50%,-50%);
-  transition:left .36s cubic-bezier(.2,.8,.2,1),transform .36s cubic-bezier(.2,.8,.2,1);
-  z-index:3;filter:drop-shadow(0 5px 5px rgba(0,0,0,.35))
+  position:absolute;left:50%;top:31%;width:86px;height:98px;transform:translate(-50%,-50%) rotate(0deg);
+  transition:left .42s cubic-bezier(.18,.75,.2,1),top .42s cubic-bezier(.18,.75,.2,1),transform .42s cubic-bezier(.18,.75,.2,1);
+  z-index:3;filter:drop-shadow(0 5px 5px rgba(0,0,0,.35));transform-origin:50% 62%;
 }
-.keeper .head{position:absolute;width:24px;height:24px;border-radius:50%;background:#f0c7a4;left:16px;top:0}
-.keeper .body{position:absolute;width:28px;height:38px;border-radius:10px 10px 6px 6px;background:#ff6a3d;left:14px;top:23px}
-.keeper .arm{position:absolute;width:36px;height:8px;border-radius:8px;background:#ff6a3d;top:32px}
-.keeper .arm.a{left:-12px;transform:rotate(-18deg)}.keeper .arm.b{right:-12px;transform:rotate(18deg)}
-.keeper .leg{position:absolute;width:8px;height:28px;background:#202b35;top:57px}
-.keeper .leg.a{left:18px;transform:rotate(10deg)}.keeper .leg.b{right:18px;transform:rotate(-10deg)}
+.keeper .head{position:absolute;width:21px;height:21px;border-radius:50%;background:#efc5a1;left:32px;top:2px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.08)}
+.keeper .hair{position:absolute;width:22px;height:9px;border-radius:10px 10px 4px 4px;background:#2a1b15;left:31px;top:0}
+.keeper .torso{position:absolute;width:30px;height:34px;border-radius:9px 9px 6px 6px;background:linear-gradient(#ff734d,#ef4f2d);left:28px;top:22px}
+.keeper .shorts{position:absolute;width:28px;height:15px;border-radius:4px 4px 7px 7px;background:#17222d;left:29px;top:53px}
+.keeper .arm{position:absolute;width:38px;height:7px;border-radius:8px;background:#ff6a3d;top:34px}
+.keeper .arm.left{left:1px;transform:rotate(-23deg);transform-origin:right center}
+.keeper .arm.right{right:1px;transform:rotate(23deg);transform-origin:left center}
+.keeper .glove{position:absolute;width:11px;height:12px;border-radius:4px;background:#f5f5f5;top:31px}
+.keeper .glove.left{left:-2px;transform:rotate(-16deg)}
+.keeper .glove.right{right:-2px;transform:rotate(16deg)}
+.keeper .leg{position:absolute;width:8px;height:30px;border-radius:7px;background:#17222d;top:65px}
+.keeper .leg.left{left:31px;transform:rotate(8deg);transform-origin:top center}
+.keeper .leg.right{right:31px;transform:rotate(-8deg);transform-origin:top center}
 .ball{
-  position:absolute;left:50%;bottom:14%;font-size:46px;transform:translateX(-50%);
-  transition:left .42s cubic-bezier(.2,.85,.2,1),bottom .42s cubic-bezier(.2,.85,.2,1),transform .42s;
+  position:absolute;left:50%;bottom:11%;font-size:48px;transform:translateX(-50%) scale(1);
+  transition:left .46s cubic-bezier(.18,.85,.2,1),bottom .46s cubic-bezier(.18,.85,.2,1),transform .46s;
   z-index:5;filter:drop-shadow(0 5px 6px rgba(0,0,0,.35))
 }
-.targets{position:absolute;left:10%;right:10%;top:8%;height:37%;z-index:8;display:grid;grid-template-columns:repeat(3,1fr)}
+.targets{
+  position:absolute;left:4%;right:4%;top:7%;height:39%;z-index:8;
+  display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr)
+}
 .target{border:0;background:transparent;cursor:pointer;position:relative}
 .target:focus-visible{outline:3px solid var(--accent);outline-offset:-5px}
 .target::after{
-  content:"";position:absolute;width:42px;height:42px;border-radius:50%;
-  left:50%;top:46%;transform:translate(-50%,-50%);
-  border:2px dashed rgba(255,255,255,.4);background:rgba(255,255,255,.06)
+  content:"";position:absolute;width:36px;height:36px;border-radius:50%;
+  left:50%;top:50%;transform:translate(-50%,-50%);
+  border:2px dashed rgba(255,255,255,.38);background:rgba(255,255,255,.055)
 }
 .result{
   position:absolute;left:12px;right:12px;bottom:4%;text-align:center;
@@ -133,15 +143,22 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
     <div class="pitch" id="pitch">
       <div class="goal"></div>
       <div class="keeper" id="keeper" aria-hidden="true">
-        <div class="head"></div><div class="body"></div>
-        <div class="arm a"></div><div class="arm b"></div>
-        <div class="leg a"></div><div class="leg b"></div>
+        <div class="hair"></div>
+        <div class="head"></div>
+        <div class="torso"></div>
+        <div class="shorts"></div>
+        <div class="arm left"></div><div class="arm right"></div>
+        <div class="glove left"></div><div class="glove right"></div>
+        <div class="leg left"></div><div class="leg right"></div>
       </div>
       <div class="ball" id="ball">⚽</div>
       <div class="targets" id="targets">
-        <button class="target" data-zone="left" aria-label="Patear a la izquierda"></button>
-        <button class="target" data-zone="center" aria-label="Patear al centro"></button>
-        <button class="target" data-zone="right" aria-label="Patear a la derecha"></button>
+        <button class="target" data-zone="top-left" aria-label="Patear arriba a la izquierda"></button>
+        <button class="target" data-zone="top-center" aria-label="Patear arriba al centro"></button>
+        <button class="target" data-zone="top-right" aria-label="Patear arriba a la derecha"></button>
+        <button class="target" data-zone="bottom-left" aria-label="Patear abajo a la izquierda"></button>
+        <button class="target" data-zone="bottom-center" aria-label="Patear abajo al centro"></button>
+        <button class="target" data-zone="bottom-right" aria-label="Patear abajo a la derecha"></button>
       </div>
       <div class="result" id="result">Elegí dónde patear</div>
     </div>
@@ -187,7 +204,7 @@ const SHOTS_PER_ROUND=5;
 const SAVE_PROBABILITY=.34;
 
 const $=id=>document.getElementById(id);
-const zones=['left','center','right'];
+const zones=['top-left','top-center','top-right','bottom-left','bottom-center','bottom-right'];
 let busy=false;
 
 function blankState(){
@@ -251,14 +268,35 @@ function renderMatches(){
 function resetPositions(){
   const ball=$('ball'),keeper=$('keeper');
   ball.style.transition='none';keeper.style.transition='none';
-  ball.style.left='50%';ball.style.bottom='14%';ball.style.transform='translateX(-50%) scale(1)';
-  keeper.style.left='50%';keeper.style.transform='translate(-50%,-50%) rotate(0deg)';
+  ball.style.left='50%';ball.style.bottom='11%';ball.style.transform='translateX(-50%) scale(1)';
+  keeper.style.left='50%';keeper.style.top='31%';keeper.style.transform='translate(-50%,-50%) rotate(0deg) scale(1)';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    ball.style.transition='left .42s cubic-bezier(.2,.85,.2,1),bottom .42s cubic-bezier(.2,.85,.2,1),transform .42s';
-    keeper.style.transition='left .36s cubic-bezier(.2,.8,.2,1),transform .36s cubic-bezier(.2,.8,.2,1)';
+    ball.style.transition='left .46s cubic-bezier(.18,.85,.2,1),bottom .46s cubic-bezier(.18,.85,.2,1),transform .46s';
+    keeper.style.transition='left .42s cubic-bezier(.18,.75,.2,1),top .42s cubic-bezier(.18,.75,.2,1),transform .42s cubic-bezier(.18,.75,.2,1)';
   }));
 }
-function zoneX(zone){return zone==='left'?'24%':zone==='right'?'76%':'50%'}
+function zonePosition(zone){
+  const map={
+    'top-left':{x:'18%',y:'69%'},
+    'top-center':{x:'50%',y:'71%'},
+    'top-right':{x:'82%',y:'69%'},
+    'bottom-left':{x:'18%',y:'53%'},
+    'bottom-center':{x:'50%',y:'52%'},
+    'bottom-right':{x:'82%',y:'53%'}
+  };
+  return map[zone]||map['bottom-center'];
+}
+function keeperPosition(zone){
+  const map={
+    'top-left':{x:'20%',y:'24%',r:-48,s:1.04},
+    'top-center':{x:'50%',y:'21%',r:0,s:1.06},
+    'top-right':{x:'80%',y:'24%',r:48,s:1.04},
+    'bottom-left':{x:'22%',y:'33%',r:-33,s:1.02},
+    'bottom-center':{x:'50%',y:'31%',r:0,s:1},
+    'bottom-right':{x:'78%',y:'33%',r:33,s:1.02}
+  };
+  return map[zone]||map['bottom-center'];
+}
 function otherZone(zone){
   const a=zones.filter(z=>z!==zone);
   return a[Math.floor(Math.random()*a.length)];
@@ -272,12 +310,17 @@ async function shoot(zone){
 
   const saved=Math.random()<SAVE_PROBABILITY;
   const keeperZone=saved?zone:otherZone(zone);
+  const ballPos=zonePosition(zone);
+  const keeperPos=keeperPosition(keeperZone);
 
   setTimeout(()=>{
-    $('ball').style.left=zoneX(zone);$('ball').style.bottom='64%';$('ball').style.transform='translateX(-50%) scale(.58)';
-    $('keeper').style.left=zoneX(keeperZone);
-    $('keeper').style.transform='translate(-50%,-50%) '+(keeperZone==='left'?'rotate(-28deg)':keeperZone==='right'?'rotate(28deg)':'rotate(0deg)');
-  },80);
+    $('ball').style.left=ballPos.x;
+    $('ball').style.bottom=ballPos.y;
+    $('ball').style.transform='translateX(-50%) scale(.54)';
+    $('keeper').style.left=keeperPos.x;
+    $('keeper').style.top=keeperPos.y;
+    $('keeper').style.transform='translate(-50%,-50%) rotate('+keeperPos.r+'deg) scale('+keeperPos.s+')';
+  },90);
 
   setTimeout(()=>{
     state.roundResults[state.shot]=saved?'save':'goal';
@@ -287,9 +330,9 @@ async function shoot(zone){
     save();render();
     if(state.shot>=SHOTS_PER_ROUND) finishRound();
     else{
-      setTimeout(()=>{resetPositions();$('result').textContent='Elegí dónde patear';$('targets').style.pointerEvents='auto';busy=false},650);
+      setTimeout(()=>{resetPositions();$('result').textContent='Elegí dónde patear';$('targets').style.pointerEvents='auto';busy=false},720);
     }
-  },540);
+  },600);
 }
 function finishRound(){
   $('targets').style.pointerEvents='none';
