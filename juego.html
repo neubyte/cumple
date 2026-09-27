@@ -91,6 +91,9 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
 .shots{display:flex;justify-content:center;gap:8px;margin-top:14px}
 .shot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#050b11;border:1px solid var(--line);font-size:.8rem}
 .shot.goalshot{background:#1b7e43}.shot.saved{background:#8f2e2e}
+.matchchip{min-width:62px;height:32px;border-radius:16px;padding:0 10px;display:grid;place-items:center;background:#07111c;border:1px solid var(--line);font-size:.78rem;font-weight:900}
+.matchchip.done{background:#13283a}
+.round-summary{margin-top:14px;padding:12px 14px;border-radius:16px;background:rgba(244,195,22,.08);border:1px solid rgba(244,195,22,.25);text-align:center;font-weight:900}
 .note{margin-top:14px;padding:12px 14px;border-radius:16px;background:#07111c;border:1px solid var(--line);color:var(--muted);font-size:.88rem}
 .cooldown{text-align:center}
 .cooldown .clock{font-size:2rem;font-weight:1000;margin:10px 0}
@@ -109,7 +112,7 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
   <header class="hero">
     <div class="kicker">Cumple Santi & Cami 2026</div>
     <h1>⚽ Desafío de Penales</h1>
-    <p>Tenés tres tandas de cinco penales. Después descansás dos horas. El arquero decide al azar si llega o no.</p>
+    <p>Tenés tres partidas de cinco penales. Después descansás dos horas. El arquero decide al azar si llega o no.</p>
   </header>
 
   <section class="card" id="loginCard">
@@ -122,7 +125,7 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
   <section class="card hidden" id="gameCard">
     <div class="kicker" id="playerLabel">Jugador</div>
     <div class="status-grid">
-      <div class="stat"><b id="roundNum">1/3</b><span>Tanda</span></div>
+      <div class="stat"><b id="roundNum">1/3</b><span>Partida</span></div>
       <div class="stat"><b id="roundGoals">0/5</b><span>Esta tanda</span></div>
       <div class="stat"><b id="sessionGoals">0/15</b><span>Sesión</span></div>
     </div>
@@ -144,16 +147,20 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
     </div>
 
     <div class="shots" id="shots" aria-label="Resultado de los cinco penales"></div>
-    <button class="btn primary hidden" id="nextRoundBtn" type="button">Jugar la siguiente tanda</button>
+    <div class="shots" id="matches" aria-label="Resultados de las tres partidas" style="margin-top:10px"></div>
+    <div class="round-summary hidden" id="roundSummary"></div>
+    <button class="btn primary hidden" id="nextRoundBtn" type="button">Jugar la siguiente partida</button>
     <div class="note">El resultado de cada penal se decide aleatoriamente. Elegir un rincón sólo cambia la animación, no aumenta ni reduce tus chances.</div>
   </section>
 
   <section class="card hidden cooldown" id="cooldownCard">
     <div class="kicker">Tiempo de descanso</div>
-    <h2>Ya jugaste tus 3 tandas</h2>
+    <h2>Ya jugaste tus 3 partidas</h2>
     <div class="clock" id="cooldownClock">02:00:00</div>
     <p class="help">Cuando termine el contador podés volver a intentar mejorar tu marca.</p>
+    <div class="best">Resultado de esta sesión<strong id="sessionFinal">—</strong><span>goles sobre 15</span></div>
     <div class="best">Tu mejor sesión en este dispositivo<strong id="bestLocal">—</strong><span>goles sobre 15</span></div>
+    <a class="btn secondary" href="./">Volver a la invitación</a>
   </section>
 
   <section class="card" style="margin-top:18px">
@@ -164,6 +171,7 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
     </div>
     <div class="prize"><strong>🥇🥈🥉 Los tres primeros tendrán premio el día del cumpleaños.</strong></div>
     <p class="help">El ranking definitivo guardará únicamente apodo, mejor puntaje y fecha/hora del resultado.</p>
+    <a class="btn secondary" href="./">← Volver a la invitación</a>
   </section>
 
   <section class="admin hidden" id="adminBox">
@@ -183,7 +191,7 @@ const zones=['left','center','right'];
 let busy=false;
 
 function blankState(){
-  return {nick:'',round:0,shot:0,roundGoals:0,sessionGoals:0,roundResults:[],best:0,cooldownUntil:0};
+  return {nick:'',round:0,shot:0,roundGoals:0,sessionGoals:0,roundResults:[],matchScores:[],best:0,lastSession:0,cooldownUntil:0};
 }
 function loadState(){
   try{
@@ -212,7 +220,9 @@ function render(){
     $('roundGoals').textContent=state.roundGoals+'/'+SHOTS_PER_ROUND;
     $('sessionGoals').textContent=state.sessionGoals+'/'+(MAX_ROUNDS*SHOTS_PER_ROUND);
     $('bestLocal').textContent=state.best||'—';
+    if($('sessionFinal')) $('sessionFinal').textContent=state.lastSession||state.sessionGoals||'—';
     renderShots();
+    renderMatches();
   }
   updateCooldown();
 }
@@ -225,6 +235,17 @@ function renderShots(){
     else if(state.roundResults[i]==='save'){d.classList.add('saved');d.textContent='A'}
     else d.textContent='·';
     $('shots').appendChild(d);
+  }
+}
+function renderMatches(){
+  const box=$('matches');
+  if(!box) return;
+  box.innerHTML='';
+  for(let i=0;i<MAX_ROUNDS;i++){
+    const d=document.createElement('div');
+    d.className='matchchip'+(state.matchScores[i]!==undefined?' done':'');
+    d.textContent=state.matchScores[i]!==undefined ? 'Partida '+(i+1)+': '+state.matchScores[i]+'/5' : 'Partida '+(i+1);
+    box.appendChild(d);
   }
 }
 function resetPositions(){
@@ -272,16 +293,22 @@ async function shoot(zone){
 }
 function finishRound(){
   $('targets').style.pointerEvents='none';
+  state.matchScores[state.round]=state.roundGoals;
+  save();
+  const summary=$('roundSummary');
+  summary.textContent='Partida '+(state.round+1)+': '+state.roundGoals+' goles de 5';
+  summary.classList.remove('hidden');
   const finalRound=state.round===MAX_ROUNDS-1;
   if(finalRound){
     state.round=MAX_ROUNDS;
+    state.lastSession=state.sessionGoals;
     state.best=Math.max(state.best,state.sessionGoals);
     state.cooldownUntil=Date.now()+COOLDOWN_MS;
     save();
-    setTimeout(()=>{busy=false;render()},850);
+    setTimeout(()=>{busy=false;render()},950);
   }else{
     $('nextRoundBtn').classList.remove('hidden');
-    $('nextRoundBtn').textContent='Jugar tanda '+(state.round+2)+' de '+MAX_ROUNDS;
+    $('nextRoundBtn').textContent='Jugar partida '+(state.round+2)+' de '+MAX_ROUNDS;
     busy=false;
   }
 }
@@ -290,6 +317,7 @@ function nextRound(){
   state.shot=0;state.roundGoals=0;state.roundResults=[];
   save();
   $('nextRoundBtn').classList.add('hidden');
+  $('roundSummary').classList.add('hidden');
   $('targets').style.pointerEvents='auto';
   resetPositions();$('result').textContent='Elegí dónde patear';
   render();
@@ -304,8 +332,8 @@ function updateCooldown(){
   if(!state.cooldownUntil)return;
   const left=state.cooldownUntil-Date.now();
   if(left<=0){
-    const keepNick=state.nick,best=state.best;
-    state=blankState();state.nick=keepNick;state.best=best;save();render();return;
+    const keepNick=state.nick,best=state.best,lastSession=state.lastSession;
+    state=blankState();state.nick=keepNick;state.best=best;state.lastSession=lastSession;save();render();return;
   }
   const total=Math.ceil(left/1000);
   const h=String(Math.floor(total/3600)).padStart(2,'0');
