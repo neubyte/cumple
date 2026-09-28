@@ -184,7 +184,15 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
   </section>
 
   <section class="admin hidden" id="adminBox">
-    <button class="btn secondary" id="resetBtn" type="button">Reiniciar prueba en este dispositivo</button>
+    <div class="card">
+      <div class="kicker">Control del campeonato</div>
+      <h2>Todos los jugadores</h2>
+      <p class="help"><strong id="adminPlayersTotal">—</strong> jugadores registrados. Esta lista no se muestra en el ranking público.</p>
+      <div class="podium" id="adminRanking">
+        <div class="rankrow"><div class="pos">—</div><div class="name">Actualizando jugadores…</div><div class="score">—</div></div>
+      </div>
+      <button class="btn secondary" id="resetBtn" type="button">Reiniciar prueba en este dispositivo</button>
+    </div>
   </section>
 </div>
 
@@ -193,6 +201,7 @@ const STORAGE='penalesSantiCami2026_v8';
 const GENERATION='cumple-2026-final2';
 const CLOSES_AT=Date.parse('2026-10-04T00:00:00-03:00');
 const RANKING_API='https://penales-santi-cami-ranking.neubyte.chatgpt.site/api/ranking';
+const IS_ADMIN = new URLSearchParams(location.search).get('admin') === '1';
 const COOLDOWN_MS=2*60*60*1000;
 const MAX_ROUNDS=3;
 const SHOTS_PER_ROUND=5;
@@ -235,9 +244,28 @@ function rankingMessage(message){
 function displayRanking(rows){
   const box=$('ranking');box.replaceChildren();
   if(!rows.length){rankingMessage('Todavía no hay resultados. ¡Podés inaugurar el ranking!');return}
-  rows.forEach((item,i)=>{
+  rows.slice(0,3).forEach((item,i)=>{
     const row=document.createElement('div');row.className='rankrow';
     const pos=document.createElement('div');pos.className='pos';pos.textContent=['🥇','🥈','🥉'][i]||String(i+1)+'.';
+    const name=document.createElement('div');name.className='name';name.textContent=item.nickname;
+    const score=document.createElement('div');score.className='score';score.textContent=item.best+' goles';
+    row.append(pos,name,score);box.appendChild(row);
+  });
+}
+function displayAdminRanking(rows){
+  if(!IS_ADMIN) return;
+  const box=$('adminRanking'),total=$('adminPlayersTotal');
+  if(!box||!total) return;
+  total.textContent=rows.length;
+  box.replaceChildren();
+  if(!rows.length){
+    const row=document.createElement('div');row.className='rankrow';
+    const name=document.createElement('div');name.className='name';name.textContent='Todavía no hay jugadores registrados.';
+    row.appendChild(name);box.appendChild(row);return;
+  }
+  rows.forEach((item,i)=>{
+    const row=document.createElement('div');row.className='rankrow';
+    const pos=document.createElement('div');pos.className='pos';pos.textContent=String(i+1)+'.';
     const name=document.createElement('div');name.className='name';name.textContent=item.nickname;
     const score=document.createElement('div');score.className='score';score.textContent=item.best+' goles';
     row.append(pos,name,score);box.appendChild(row);
@@ -247,8 +275,13 @@ async function refreshRanking(){
   try{
     const response=await fetch(RANKING_API,{cache:'no-store'});
     if(!response.ok)throw new Error('ranking');
-    displayRanking((await response.json()).ranking||[]);
-  }catch(e){rankingMessage('Sin conexión con el ranking. Revisá tu conexión e intentá de nuevo.');}
+    const rows=(await response.json()).ranking||[];
+    displayRanking(rows);
+    displayAdminRanking(rows);
+  }catch(e){
+    rankingMessage('Sin conexión con el ranking. Revisá tu conexión e intentá de nuevo.');
+    if(IS_ADMIN&&$('adminRanking')) $('adminRanking').textContent='No se pudo actualizar la lista de jugadores.';
+  }
 }
 async function syncRanking(){ return refreshRanking(); }
 
@@ -475,7 +508,7 @@ $('nextRoundBtn').addEventListener('click',nextRound);
 $('resetBtn').addEventListener('click',resetDemo);
 $('resumeBtn').addEventListener('click',beginSession);
 $('newSessionBtn').addEventListener('click',beginSession);
-if(new URLSearchParams(location.search).get('admin')==='1')$('adminBox').classList.remove('hidden');
+if(IS_ADMIN)$('adminBox').classList.remove('hidden');
 
 setInterval(()=>{updateCooldown();if(Date.now()>=CLOSES_AT)render()},1000);
 setInterval(refreshRanking,30000);
