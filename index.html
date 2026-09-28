@@ -218,9 +218,9 @@ p{line-height:1.5}
     <div class="card ranking-card">
       <div class="kicker">Hay premios para el podio</div>
       <h2>🏆 Ranking de penales</h2>
-      <p>Jugá 15 penales, sumá tus goles y volvé a intentarlo después de dos horas. Los tres primeros tendrán premio el día del cumple.</p>
+      <p>Jugá 15 penales, sumá tus goles con tu apodo y volvé después de dos horas, incluso desde otro equipo. 🕛 El ranking cierra el sábado 3 de octubre a medianoche. Los tres primeros tendrán premio el día del cumple.</p>
       <div class="podium" id="rankingList" aria-live="polite"><p>Buscando el podio…</p></div>
-      <a class="btn primary" href="#penales">⚽ ¡Quiero entrar al ranking!</a>
+      <a class="btn primary" id="rankingPlay" href="#penales">⚽ ¡Quiero entrar al ranking!</a>
     </div>
   </section>
 
@@ -228,9 +228,9 @@ p{line-height:1.5}
     <div class="card">
       <div class="kicker">Tiempo extra</div>
       <h2>Desafío de Penales</h2>
-      <p>Escribí tu apodo para jugar. Tus goles se acumulan en el ranking.</p>
-      <a class="btn primary" href="./juego-penales.html?v=20260927c" target="_blank" rel="noopener noreferrer" style="margin-bottom:12px">⚽ Jugar en pantalla completa</a>
-      <iframe class="game-frame" title="Desafío de Penales" src="./juego-penales.html?v=20260927c" loading="eager" allow="fullscreen"></iframe>
+      <p>Escribí tu apodo para jugar. Tus goles se acumulan en el ranking, aunque vuelvas desde otro equipo.</p>
+      <a class="btn primary" id="gameFullscreen" href="./juego-penales.html?v=20260928-final" target="_blank" rel="noopener noreferrer" style="margin-bottom:12px">⚽ Jugar en pantalla completa</a>
+      <iframe class="game-frame" title="Desafío de Penales" src="./juego-penales.html?v=20260928-final" loading="eager" allow="fullscreen"></iframe>
     </div>
   </section>
 
@@ -438,6 +438,16 @@ function burst(){
     box.appendChild(el);
     setTimeout(()=>el.remove(),2300);
   }
+}
+const contestClosed = Date.now() >= Date.parse('2026-10-04T00:00:00-03:00');
+if(contestClosed){
+  const play=document.getElementById('rankingPlay');
+  play.removeAttribute('href');play.textContent='🏆 Campeonato finalizado';play.classList.add('disabled');
+  const game=document.getElementById('penales');
+  game.querySelector('h2').textContent='Campeonato finalizado';
+  game.querySelector('p').textContent='El ranking cerró el sábado a medianoche. Los resultados finales siguen arriba.';
+  document.getElementById('gameFullscreen').remove();
+  game.querySelector('iframe').remove();
 }
 </script>
 </body>
