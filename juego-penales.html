@@ -111,19 +111,22 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
   <header class="hero">
     <div class="kicker">Cumple Santi & Cami 2026</div>
     <h1>⚽ Desafío de Penales</h1>
-    <p>Tenés tres partidas de cinco penales. Después descansás dos horas. Cada vez que volvés, tus goles se suman al ranking.</p>
+    <p>Jugá tres partidas de cinco penales. El arquero y el descanso de dos horas se controlan en línea. Cierra el sábado 3 de octubre a medianoche.</p>
   </header>
+
+  <section class="card hidden" id="closedCard"><h2>🏆 Campeonato finalizado</h2><p>El ranking cerró el sábado 3 de octubre a medianoche. Mirá los resultados finales abajo.</p></section>
 
   <section class="card" id="loginCard">
     <label for="nick">Tu nombre o apodo</label>
     <input id="nick" maxlength="12" autocomplete="nickname" placeholder="Ej.: Benja" aria-describedby="nickHelp">
-    <p class="help" id="nickHelp" aria-live="polite">Elegí un apodo único. Si ya está ocupado, probá con otro, por ejemplo “Santi 2”.</p>
+    <p class="help" id="nickHelp" aria-live="polite">Escribí tu apodo. Si volvés desde otro equipo, usá exactamente el mismo para sumar tus goles.</p>
     <button class="btn primary" id="startBtn" type="button">Entrar al desafío</button>
   </section>
 
   <section class="card hidden" id="identityCard">
     <strong id="identityLabel">Jugás como…</strong>
-    <p class="help">Tu apodo queda guardado en este dispositivo para sumar tus próximas sesiones.</p>
+    <p class="help">Podés volver desde otro equipo con el mismo apodo. Los goles y el descanso se comparten.</p>
+    <button class="btn secondary" id="resumeBtn" type="button">Iniciar o retomar sesión</button>
   </section>
 
   <section class="card hidden" id="gameCard" style="margin-top:14px">
@@ -157,7 +160,7 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
     <div class="shots" id="matches" aria-label="Resultados de las tres partidas" style="margin-top:10px"></div>
     <div class="round-summary hidden" id="roundSummary"></div>
     <button class="btn primary hidden" id="nextRoundBtn" type="button">Jugar la siguiente partida</button>
-    <div class="note">El resultado de cada penal se decide aleatoriamente. Elegir un rincón sólo cambia la animación, no aumenta ni reduce tus chances.</div>
+    <div class="note">El servidor decide cada tiro. Elegir un rincón sólo cambia la animación, no aumenta ni reduce tus chances. Necesitás conexión para jugar.</div>
   </section>
 
   <section class="card hidden cooldown" id="cooldownCard">
@@ -167,6 +170,7 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
     <p class="help">Cuando termine el contador podés volver a jugar: los goles nuevos se sumarán a los anteriores.</p>
     <div class="best">Resultado de esta sesión<strong id="sessionFinal">—</strong><span>goles sobre 15</span></div>
     <div class="best">Tus goles acumulados en este dispositivo<strong id="bestLocal">—</strong><span>goles en total</span></div>
+    <button class="btn primary hidden" id="newSessionBtn" type="button">Jugar otra sesión</button>
   </section>
 
   <section class="card" style="margin-top:18px">
@@ -185,8 +189,9 @@ input:focus{border-color:rgba(244,195,22,.8);box-shadow:0 0 0 3px rgba(244,195,2
 </div>
 
 <script>
-const STORAGE='penalesSantiCami2026_v6';
-const GENERATION='cumple-2026-final';
+const STORAGE='penalesSantiCami2026_v7';
+const GENERATION='cumple-2026-final2';
+const CLOSES_AT=Date.parse('2026-10-04T00:00:00-03:00');
 const RANKING_API='https://penales-santi-cami-ranking.neubyte.chatgpt.site/api/ranking';
 const COOLDOWN_MS=2*60*60*1000;
 const MAX_ROUNDS=3;
@@ -206,7 +211,7 @@ const KEEPER_IMAGES={
 let busy=false;
 
 function blankState(){
-  return {nick:'',round:0,shot:0,roundGoals:0,sessionGoals:0,roundResults:[],matchScores:[],total:0,lastSession:0,cooldownUntil:0,playerId:'',pendingScores:[]};
+  return {nick:'',round:0,shot:0,roundGoals:0,sessionGoals:0,roundResults:[],matchScores:[],total:0,lastSession:0,cooldownUntil:0,playerId:'',attemptId:''};
 }
 function loadState(){
   try{
@@ -243,36 +248,44 @@ async function refreshRanking(){
     const response=await fetch(RANKING_API,{cache:'no-store'});
     if(!response.ok)throw new Error('ranking');
     displayRanking((await response.json()).ranking||[]);
-  }catch(e){rankingMessage('Sin conexión con el ranking. Tus goles se guardan en este dispositivo.');}
+  }catch(e){rankingMessage('Sin conexión con el ranking. Revisá tu conexión e intentá de nuevo.');}
 }
-let syncing=false;
-async function syncRanking(){
-  if(syncing)return;
-  if(!state.pendingScores.length||!state.nick)return refreshRanking();
-  syncing=true;
-  try{
-    while(state.pendingScores.length){
-      const pending=state.pendingScores[0];
-      const response=await fetch(RANKING_API,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({generation:GENERATION,id:state.playerId,nickname:state.nick,sessionId:pending.id,goals:pending.goals})
-      });
-      if(!response.ok)throw new Error('save');
-      displayRanking((await response.json()).ranking||[]);
-      state.pendingScores.shift();save();
-    }
-  }catch(e){rankingMessage('No se pudo subir el resultado. Se reintentará al recuperar conexión.')}
-  finally{syncing=false}
-}
+async function syncRanking(){ return refreshRanking(); }
 
+async function beginSession(){
+  if(!state.nick||!state.playerId||Date.now()>=CLOSES_AT)return;
+  $('identityLabel').textContent='Preparando sesión de '+state.nick+'…';
+  try{
+    const response=await fetch(RANKING_API,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'startSession',generation:GENERATION,id:state.playerId,nickname:state.nick})
+    });
+    const data=await response.json();
+    if(response.status===429){
+      state.cooldownUntil=data.cooldownUntil;state.total=data.total;state.round=MAX_ROUNDS;save();render();return;
+    }
+    if(!response.ok)throw new Error(data.error||'No se pudo iniciar la sesión.');
+    const nick=state.nick,id=state.playerId,total=data.total,lastSession=state.lastSession;
+    const results=data.results||'';
+    state=blankState();state.nick=nick;state.playerId=id;state.total=total;state.lastSession=lastSession;
+    state.attemptId=data.attemptId;state.round=Math.min(Math.floor(results.length/5),2);
+    state.shot=results.length%5;state.sessionGoals=[...results].filter(x=>x==='G').length;
+    state.matchScores=[0,1,2].filter(i=>results.length>=(i+1)*5).map(i=>[...results.slice(i*5,i*5+5)].filter(x=>x==='G').length);
+    state.roundResults=[...results.slice(state.round*5)].map(x=>x==='G'?'goal':'save');
+    state.roundGoals=state.roundResults.filter(x=>x==='goal').length;
+    save();render();resetPositions();
+  }catch(e){$('identityLabel').textContent=String(e.message||e)}
+}
 function render(){
+  const closed=Date.now()>=CLOSES_AT;
   const cooling=state.cooldownUntil>Date.now();
   const hasNick=!!state.nick;
-  setHidden('loginCard',hasNick);
-  setHidden('identityCard',!hasNick);
+  setHidden('closedCard',!closed);
+  setHidden('loginCard',hasNick||closed);
+  setHidden('identityCard',!hasNick||closed);
   if(hasNick) $('identityLabel').textContent='Jugás como '+state.nick;
-  setHidden('gameCard',!hasNick||cooling||state.round>=MAX_ROUNDS);
-  setHidden('cooldownCard',!cooling && !(state.round>=MAX_ROUNDS && hasNick));
+  setHidden('gameCard',closed||!hasNick||cooling||state.round>=MAX_ROUNDS);
+  setHidden('cooldownCard',closed||(!cooling && !(state.round>=MAX_ROUNDS && hasNick)));
 
   if(hasNick){
     $('playerLabel').textContent='Jugando: '+state.nick;
@@ -347,44 +360,39 @@ function otherZone(zone){
   return a[Math.floor(Math.random()*a.length)];
 }
 async function shoot(zone){
-  if(busy||state.shot>=SHOTS_PER_ROUND)return;
-  busy=true;
-  $('targets').style.pointerEvents='none';
-  resetPositions();
+  if(busy||Date.now()>=CLOSES_AT||state.shot>=SHOTS_PER_ROUND||!state.attemptId)return;
+  busy=true;$('targets').style.pointerEvents='none';
   $('result').textContent='¡Va el remate!';
-
-  const saved=Math.random()<SAVE_PROBABILITY;
-  const keeperZone=saved?zone:otherZone(zone);
-  const ballPos=zonePosition(zone);
-  const keeperPos=keeperPosition(keeperZone);
-
+  let data;
+  try{
+    const response=await fetch(RANKING_API,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'shoot',generation:GENERATION,id:state.playerId,nickname:state.nick,attemptId:state.attemptId,shot:state.round*5+state.shot})
+    });
+    data=await response.json();
+    if(!response.ok)throw new Error(data.error||'No se pudo registrar el tiro.');
+  }catch(e){
+    $('result').textContent=String(e.message||e);
+    $('targets').style.pointerEvents='auto';busy=false;return;
+  }
+  resetPositions();
+  const saved=data.saved,keeperZone=saved?zone:otherZone(zone);
+  const ballPos=zonePosition(zone),keeperPos=keeperPosition(keeperZone);
   setTimeout(()=>{
-    $('ball').style.left=ballPos.x;
-    $('ball').style.bottom=ballPos.y;
+    $('ball').style.left=ballPos.x;$('ball').style.bottom=ballPos.y;
     $('ball').style.transform='translateX(-50%) scale(.54)';
     $('keeperImg').src=KEEPER_IMAGES[keeperZone];
-    $('keeper').style.left=keeperPos.x;
-    $('keeper').style.top=keeperPos.y;
-    $('keeper').style.width=keeperPos.w;
-    $('keeper').style.height=keeperPos.h;
-    $('keeper').style.transform='translate(-50%,-50%)';
+    $('keeper').style.left=keeperPos.x;$('keeper').style.top=keeperPos.y;
+    $('keeper').style.width=keeperPos.w;$('keeper').style.height=keeperPos.h;
   },90);
-
   setTimeout(()=>{
-    state.roundResults[state.shot]=saved?'save':'goal';
-    state.shot++;
+    state.roundResults[state.shot]=saved?'save':'goal';state.shot++;
     if(!saved){state.roundGoals++;state.sessionGoals++}
+    if(data.cooldownUntil)state.cooldownUntil=data.cooldownUntil;
     $('result').textContent=saved?'🧤 ¡Atajó el arquero!':'⚽ ¡GOOOOL!';
     save();render();
-    if(state.shot>=SHOTS_PER_ROUND) finishRound();
-    else{
-      setTimeout(()=>{
-        resetPositions();
-        $('result').textContent='Elegí dónde patear';
-        $('targets').style.pointerEvents='auto';
-        busy=false
-      },720);
-    }
+    if(state.shot>=SHOTS_PER_ROUND)finishRound();
+    else setTimeout(()=>{resetPositions();$('result').textContent='Elegí dónde patear';$('targets').style.pointerEvents='auto';busy=false},720);
   },600);
 }
 function finishRound(){
@@ -399,9 +407,7 @@ function finishRound(){
     state.round=MAX_ROUNDS;
     state.lastSession=state.sessionGoals;
     state.total+=state.sessionGoals;
-    state.pendingScores.push({id:crypto.randomUUID(),goals:state.sessionGoals});
-    syncRanking();
-    state.cooldownUntil=Date.now()+COOLDOWN_MS;
+    refreshRanking();
     save();
     setTimeout(()=>{busy=false;render()},950);
   }else{
@@ -422,45 +428,43 @@ function nextRound(){
   render();
 }
 async function start(){
-  if($('startBtn').disabled)return;
+  if($('startBtn').disabled||Date.now()>=CLOSES_AT)return;
   const nick=cleanNick($('nick').value);
   if(nick.length<2){$('nickHelp').textContent='Escribí al menos dos letras para tu apodo.';$('nick').focus();return}
   const id=crypto.randomUUID();
   $('startBtn').disabled=true;
   $('startBtn').textContent='Reservando apodo…';
-  $('nickHelp').textContent='Consultando si el apodo está libre…';
+  $('nickHelp').textContent='Buscando tus goles y sesiones…';
   try{
     const response=await fetch(RANKING_API,{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'reserve',generation:GENERATION,id,nickname:nick})
     });
-    if(response.status===409){
-      $('nickHelp').textContent='“'+nick+'” ya está ocupado. Probá otro, por ejemplo “'+nick.slice(0,10)+' 2”.';
-      $('nick').focus();$('nick').select();return;
-    }
-    if(!response.ok)throw new Error('reserve');
-    state=blankState();state.nick=nick;state.playerId=id;
-    save();render();resetPositions();refreshRanking();
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||'No se pudo ingresar.');
+    state=blankState();state.nick=nick;state.playerId=data.id;
+    save();await beginSession();refreshRanking();
   }catch(e){
-    $('nickHelp').textContent='No se pudo verificar el apodo. Revisá la conexión e intentá de nuevo.';
+    $('nickHelp').textContent=String(e.message||e);
   }finally{
     $('startBtn').disabled=false;
     $('startBtn').textContent='Entrar al desafío';
   }
 }
 function updateCooldown(){
+  if(Date.now()>=CLOSES_AT){$('newSessionBtn').classList.add('hidden');return;}
   if(!state.cooldownUntil)return;
   const left=state.cooldownUntil-Date.now();
   if(left<=0){
-    const keepNick=state.nick,total=state.total,lastSession=state.lastSession,playerId=state.playerId,pendingScores=state.pendingScores;
-    state=blankState(); state.nick=keepNick; state.total=total; state.lastSession=lastSession; state.playerId=playerId; state.pendingScores=pendingScores;
-    save(); render(); return;
+    $('cooldownClock').textContent='Ya podés volver a jugar';
+    $('newSessionBtn').classList.remove('hidden');return;
   }
+  $('newSessionBtn').classList.add('hidden');
   const total=Math.ceil(left/1000);
   const h=String(Math.floor(total/3600)).padStart(2,'0');
   const m=String(Math.floor((total%3600)/60)).padStart(2,'0');
-  const s=String(total%60).padStart(2,'0');
-  $('cooldownClock').textContent=h+':'+m+':'+s;
+  const seconds=String(total%60).padStart(2,'0');
+  $('cooldownClock').textContent=h+':'+m+':'+seconds;
 }
 function resetDemo(){localStorage.removeItem(STORAGE);state=blankState();location.reload()}
 
@@ -469,14 +473,16 @@ $('nick').addEventListener('keydown',e=>{if(e.key==='Enter')start()});
 document.querySelectorAll('.target').forEach(b=>b.addEventListener('click',()=>shoot(b.dataset.zone)));
 $('nextRoundBtn').addEventListener('click',nextRound);
 $('resetBtn').addEventListener('click',resetDemo);
+$('resumeBtn').addEventListener('click',beginSession);
+$('newSessionBtn').addEventListener('click',beginSession);
 if(new URLSearchParams(location.search).get('admin')==='1')$('adminBox').classList.remove('hidden');
 
-setInterval(updateCooldown,1000);
-setInterval(()=>{if(state.pendingScores.length)syncRanking();else refreshRanking()},30000);
-window.addEventListener('online',syncRanking);
+setInterval(()=>{updateCooldown();if(Date.now()>=CLOSES_AT)render()},1000);
+setInterval(refreshRanking,30000);
+window.addEventListener('online',refreshRanking);
 render();
 syncRanking();
-if(state.nick && state.cooldownUntil<=Date.now() && state.round<MAX_ROUNDS) resetPositions();
+if(state.nick && state.attemptId && state.round<MAX_ROUNDS) resetPositions();
 </script>
 </body>
 </html>
