@@ -142,6 +142,8 @@ p{line-height:1.5}
 .podium{display:grid;gap:8px;margin:16px 0}
 .rankrow{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:12px;border-radius:14px;background:#02070b;border:1px solid var(--line)}
 .rankrow strong:last-child{color:var(--amarillo)}
+.admin-rank-note{font-size:.82rem;opacity:.62;margin:.8rem 0 0}
+.admin-rank-count{font-size:1.05rem;font-weight:800;margin:.2rem 0 1rem}
 @media(max-width:600px){.game-frame{height:940px}}
 .map-card{overflow:hidden;padding:0}
 .map-head{padding:20px 20px 14px}
@@ -279,6 +281,16 @@ p{line-height:1.5}
       <p style="margin:.2rem 0 0;opacity:.78">Confirmados · faltan <strong id="confirmedMissing">22</strong></p>
       <p id="counterStatus" style="font-size:.82rem;opacity:.58;margin-bottom:0">Actualizando…</p>
     </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="kicker">Control del campeonato</div>
+      <h2 style="margin-bottom:.35rem">Todos los jugadores</h2>
+      <p class="admin-rank-count"><span id="adminPlayersTotal">—</span> jugadores registrados</p>
+      <div class="podium" id="adminRankingList" aria-live="polite">
+        <p>Actualizando jugadores…</p>
+      </div>
+      <p class="admin-rank-note">Esta vista sólo aparece al entrar con <strong>?admin=1</strong>. El ranking público sigue mostrando únicamente el podio.</p>
+    </div>
   </section>
 
 </main>
@@ -287,6 +299,26 @@ p{line-height:1.5}
 
 <script>
 const RANKING_API='https://penales-santi-cami-ranking.neubyte.chatgpt.site/api/ranking';
+const IS_ADMIN = new URLSearchParams(location.search).get('admin') === '1';
+
+function renderAdminRanking(rows){
+  const box=document.getElementById('adminRankingList');
+  const total=document.getElementById('adminPlayersTotal');
+  if(!box||!total) return;
+  total.textContent=rows.length;
+  box.replaceChildren();
+  if(!rows.length){
+    box.textContent='Todavía no hay jugadores registrados.';
+    return;
+  }
+  rows.forEach((entry,i)=>{
+    const row=document.createElement('div');row.className='rankrow';
+    const pos=document.createElement('strong');pos.textContent=String(i+1)+'.';
+    const name=document.createElement('strong');name.textContent=entry.nickname;
+    const goals=document.createElement('strong');goals.textContent=entry.best+' goles';
+    row.append(pos,name,goals);box.appendChild(row);
+  });
+}
 async function loadRanking(){
   const box=document.getElementById('rankingList');
   try{
@@ -294,7 +326,11 @@ async function loadRanking(){
     if(!response.ok)throw new Error('ranking');
     const rows=(await response.json()).ranking||[];
     box.replaceChildren();
-    if(!rows.length){box.textContent='El podio está vacío. ¡Podés ser el primero!';return}
+    if(!rows.length){
+      box.textContent='El podio está vacío. ¡Podés ser el primero!';
+      if(IS_ADMIN) renderAdminRanking([]);
+      return;
+    }
     rows.slice(0,3).forEach((entry,i)=>{
       const row=document.createElement('div');row.className='rankrow';
       const medal=document.createElement('strong');medal.textContent=['🥇','🥈','🥉'][i];
@@ -302,7 +338,14 @@ async function loadRanking(){
       const goals=document.createElement('strong');goals.textContent=entry.best+' goles';
       row.append(medal,name,goals);box.appendChild(row);
     });
-  }catch(e){box.textContent='El ranking no está disponible ahora. Probá de nuevo en un rato.'}
+    if(IS_ADMIN) renderAdminRanking(rows);
+  }catch(e){
+    box.textContent='El ranking no está disponible ahora. Probá de nuevo en un rato.';
+    if(IS_ADMIN){
+      const admin=document.getElementById('adminRankingList');
+      if(admin) admin.textContent='No se pudo actualizar la lista de jugadores.';
+    }
+  }
 }
 loadRanking();
 setInterval(loadRanking,30000);
@@ -373,8 +416,7 @@ function shareWhatsApp(){
 }
 
 async function loadAdminCounter(){
-  const params = new URLSearchParams(location.search);
-  if(params.get('admin') !== '1') return;
+  if(!IS_ADMIN) return;
 
   const panel = document.getElementById('adminCounter');
   panel.style.display = 'block';
