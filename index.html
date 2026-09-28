@@ -138,6 +138,10 @@ p{line-height:1.5}
 .btn.primary{background:linear-gradient(90deg,#f3c111,#fff 48%,#ef3b40);color:#101820;border:none}
 .btn.disabled{opacity:.42;cursor:not-allowed}
 .game-frame{width:100%;height:1020px;border:0;border-radius:18px;background:#07111c;display:block}
+.ranking-card{border-color:rgba(244,195,22,.6);box-shadow:0 0 0 2px rgba(244,195,22,.12),0 18px 50px rgba(0,0,0,.3)}
+.podium{display:grid;gap:8px;margin:16px 0}
+.rankrow{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:12px;border-radius:14px;background:#02070b;border:1px solid var(--line)}
+.rankrow strong:last-child{color:var(--amarillo)}
 @media(max-width:600px){.game-frame{height:940px}}
 .map-card{overflow:hidden;padding:0}
 .map-head{padding:20px 20px 14px}
@@ -209,7 +213,17 @@ p{line-height:1.5}
     </div>
   </section>
 
-  <section class="section">
+  <section class="section" id="ranking">
+    <div class="card ranking-card">
+      <div class="kicker">Hay premios para el podio</div>
+      <h2>🏆 Ranking de penales</h2>
+      <p>Jugá 15 penales, sumá tus goles y volvé a intentarlo después de dos horas. Los tres primeros tendrán premio el día del cumple.</p>
+      <div class="podium" id="rankingList" aria-live="polite"><p>Buscando el podio…</p></div>
+      <a class="btn primary" href="#penales">⚽ ¡Quiero entrar al ranking!</a>
+    </div>
+  </section>
+
+  <section class="section" id="penales">
     <div class="card">
       <div class="kicker">Tiempo extra</div>
       <h2>Desafío de Penales</h2>
@@ -271,6 +285,26 @@ p{line-height:1.5}
 <div class="confetti" id="confetti"></div>
 
 <script>
+const RANKING_API='https://penales-santi-cami-ranking.neubyte.chatgpt.site/api/ranking';
+async function loadRanking(){
+  const box=document.getElementById('rankingList');
+  try{
+    const response=await fetch(RANKING_API,{cache:'no-store'});
+    if(!response.ok)throw new Error('ranking');
+    const rows=(await response.json()).ranking||[];
+    box.replaceChildren();
+    if(!rows.length){box.textContent='El podio está vacío. ¡Podés ser el primero!';return}
+    rows.slice(0,3).forEach((entry,i)=>{
+      const row=document.createElement('div');row.className='rankrow';
+      const medal=document.createElement('strong');medal.textContent=['🥇','🥈','🥉'][i];
+      const name=document.createElement('strong');name.textContent=entry.nickname;
+      const goals=document.createElement('strong');goals.textContent=entry.best+' goles';
+      row.append(medal,name,goals);box.appendChild(row);
+    });
+  }catch(e){box.textContent='El ranking no está disponible ahora. Probá de nuevo en un rato.'}
+}
+loadRanking();
+setInterval(loadRanking,30000);
 const EVENT_DATE = new Date('2026-10-04T17:00:00-03:00');
 let choice = localStorage.getItem('equipoCumple') || null;
 
